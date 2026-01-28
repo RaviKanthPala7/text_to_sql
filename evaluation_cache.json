@@ -1,0 +1,17 @@
+{
+  "model_used": "gemini-2.0-flash",
+  "evaluator_model": "llama-3.3-70b-versatile",
+  "metrics_df": [
+    {
+      "context_precision": 0.8,
+      "helpfulness": 4.2
+    }
+  ],
+  "evaluation_questions": [
+    "What was the budget of Product 12",
+    "What are the names of all products in the products table?",
+    "List all customer names from the customers table.",
+    "Find the name and state of all regions in the regions table.",
+    "What is the name of the customer with Customer Index = 1"
+  ]
+}

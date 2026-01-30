@@ -1,0 +1,10 @@
+venv/
+.env
+.env.example
+.git/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+evaluation_cache.json
+Text_to_SQL_Database/
+*.sql

@@ -1,4 +1,4 @@
-name: Build and Push to Artifact Registry
+name: Build, Push and Deploy to Cloud Run
 
 on:
   push:
@@ -8,9 +8,10 @@ env:
   REGION: asia-south1
   ARTIFACT_REPO: text-to-sql-docker-image-repository
   IMAGE_NAME: text-to-sql
+  SERVICE_NAME: text-to-sql
 
 jobs:
-  build-and-push:
+  build-push-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,3 +33,13 @@ jobs:
           IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image "$IMAGE" \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "DB_HOST=${{ secrets.DB_HOST }},DB_PORT=3306,DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }},GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"

@@ -70,9 +70,9 @@ numpy==2.4.1
 openai==2.15.0
 orjson==3.11.5
 ormsgpack==1.12.2
-packaging==25.0
-pandas==3.0.0
-pillow==12.1.0
+packaging>=23.2,<25
+pandas>=1.4.0,<3
+pillow>=10.4.0,<11
 platformdirs==4.5.1
 pre_commit==4.5.1
 propcache==0.4.1
@@ -92,7 +92,7 @@ ragas==0.4.3
 regex==2026.1.15
 requests==2.32.5
 requests-toolbelt==1.0.0
-rich==14.3.1
+rich>=13.7.0,<14
 rsa==4.9.1
 safetensors==0.7.0
 scikit-learn==1.8.0

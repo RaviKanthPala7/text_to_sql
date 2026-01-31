@@ -338,12 +338,22 @@ if view_cached and has_cache and cached_results:
         st.dataframe(metrics_df, use_container_width=True, hide_index=True)
         st.caption("📊 These are aggregate metrics (averages) across all evaluation questions.")
     
-    # Show questions used for evaluation
+    # Show questions with ground truth and model output (if available in cache)
     if "evaluation_questions" in cached_results:
         st.subheader("📋 Questions Used for Evaluation")
-        for idx, question in enumerate(cached_results["evaluation_questions"], 1):
-            st.write(f"{idx}. {question}")
-    
+        questions = cached_results["evaluation_questions"]
+        references = cached_results.get("evaluation_references", [])
+        responses = cached_results.get("evaluation_responses", [])
+        has_queries = references and responses and len(references) == len(questions) == len(responses)
+        for idx, question in enumerate(questions, 1):
+            if has_queries:
+                with st.expander(f"{idx}. {question}", expanded=(idx == 1)):
+                    st.markdown("**Ground truth query**")
+                    st.code(references[idx - 1], language="sql")
+                    st.markdown("**Model output query**")
+                    st.code(responses[idx - 1], language="sql")
+            else:
+                st.write(f"{idx}. {question}")
     st.info("💡 Click 'Refresh Evaluation' to recalculate metrics with current model.")
 
 # Show message if no cache exists and user hasn't clicked anything
@@ -401,12 +411,14 @@ if refresh_eval:
             # Convert result to aggregate metrics DataFrame
             metrics_df = format_evaluation_result(result)
             
-            # Save to cache (only aggregate metrics, not per-question)
+            # Save to cache (questions, ground truth, and model outputs for display)
             cache_data = {
                 "model_used": llm_config.google_model,
                 "evaluator_model": llm_config.groq_model,
                 "metrics_df": metrics_df.to_dict(orient="records") if isinstance(metrics_df, pd.DataFrame) else None,
-                "evaluation_questions": user_inputs,  # Store questions for display
+                "evaluation_questions": user_inputs,
+                "evaluation_references": references,
+                "evaluation_responses": responses,
             }
             save_evaluation_cache(cache_data)
             
@@ -418,11 +430,14 @@ if refresh_eval:
             st.dataframe(metrics_df, use_container_width=True, hide_index=True)
             st.caption("📊 These are aggregate metrics (averages) across all evaluation questions.")
             
-            # Show questions used for evaluation at the bottom
+            # Show questions with ground truth and model output
             st.subheader("📋 Questions Used for Evaluation")
             for idx, question in enumerate(user_inputs, 1):
-                st.write(f"{idx}. {question}")
-            
+                with st.expander(f"{idx}. {question}", expanded=(idx == 1)):
+                    st.markdown("**Ground truth query**")
+                    st.code(references[idx - 1], language="sql")
+                    st.markdown("**Model output query**")
+                    st.code(responses[idx - 1], language="sql")
             st.info("💾 Results have been cached. Next time you can view them instantly using 'View Cached Results'.")
         
     except Exception as e:

@@ -13,5 +13,19 @@
     "List all customer names from the customers table.",
     "Find the name and state of all regions in the regions table.",
     "What is the name of the customer with Customer Index = 1"
+  ],
+  "evaluation_references": [
+    "SELECT `2017 Budgets` FROM `2017_budgets` WHERE `Product Name` = 'Product 12';",
+    "SELECT `Product Name` FROM products;",
+    "SELECT `Customer Names` FROM customers;",
+    "SELECT name, state FROM regions;",
+    "SELECT `Customer Names` FROM customers WHERE `Customer Index` = 1;"
+  ],
+  "evaluation_responses": [
+    "SELECT `2017_Budgets` FROM `2017_budgets` WHERE `Product_Name` = 'Product 12'",
+    "SELECT Product_Name FROM products",
+    "SELECT Customer_Names FROM customers",
+    "SELECT name, state FROM regions",
+    "SELECT Customer_Names FROM Customers WHERE Customer_Index = 1"
   ]
 }

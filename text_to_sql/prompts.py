@@ -10,6 +10,9 @@ Based on the table schema below, write a SQL query that would answer the user's 
 Remember: Only provide the SQL query, do not include anything else.
 Provide the SQL query in a single line; do not add line breaks.
 
+Use the exact table and column names from the schema, including exact spelling and casing.
+Table names must be lowercase (e.g. customers, products, regions, 2017_budgets, sales_order, state_regions).
+
 Table schema:
 {schema}
 

@@ -19,7 +19,7 @@ import streamlit as st
 
 from text_to_sql.chains import batch_generate_sql_queries, create_sql_chain, generate_sql_query
 from text_to_sql.config import get_llm_config
-from text_to_sql.db import get_database, get_schema, run_query
+from text_to_sql.db import get_database, get_schema, normalize_sql_table_names, run_query
 from text_to_sql.evaluation import (
     build_evaluation_components,
     build_evaluation_dataset,
@@ -248,7 +248,9 @@ if submit_query and question.strip():
             
             with st.spinner("Generating SQL query..."):
                 sql = generate_sql_query(st.session_state.sql_chain, question)
-            
+            # Normalize table names to lowercase so queries work on case-sensitive MySQL
+            sql = normalize_sql_table_names(sql)
+
             st.success("SQL query generated successfully!")
             
             # Display generated SQL

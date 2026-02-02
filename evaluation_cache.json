@@ -26,6 +26,6 @@
     "SELECT Product_Name FROM products",
     "SELECT Customer_Names FROM customers",
     "SELECT name, state FROM regions",
-    "SELECT Customer_Names FROM Customers WHERE Customer_Index = 1"
+    "SELECT Customer_Names FROM customers WHERE Customer_Index = 1"
   ]
 }

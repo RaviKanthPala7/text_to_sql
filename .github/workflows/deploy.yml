@@ -3,6 +3,13 @@ name: Build, Push and Deploy to Cloud Run
 on:
   push:
     branches: [main]
+    # Skip deploy when only these files change (they don't affect the running app)
+    paths-ignore:
+      - 'README.md'
+      - '**.md'
+      - '.gitignore'
+      - '.env.example'
+      - 'evaluation_cache.json'
 
 env:
   REGION: asia-south1

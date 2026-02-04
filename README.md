@@ -4,6 +4,9 @@ A Streamlit app that converts natural language questions into SQL and runs them 
 
 **Live app:** [https://text-to-sql-986401037066.asia-south1.run.app/](https://text-to-sql-986401037066.asia-south1.run.app/)
 
+**Demo video:** [https://drive.google.com/file/d/12eEhAIS7-PaUDshuGGoK6zx0v_W8PomK/view](https://drive.google.com/file/d/12eEhAIS7-PaUDshuGGoK6zx0v_W8PomK/view)
+
+
 ---
 
 ## Features

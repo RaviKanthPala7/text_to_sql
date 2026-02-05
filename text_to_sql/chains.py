@@ -10,7 +10,33 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from .db import get_schema
-from .prompts import get_sql_prompt
+from .prompts import get_intent_validation_prompt, get_sql_prompt
+
+
+def create_intent_validation_chain(llm: BaseChatModel):
+    """
+    Create a chain that analyzes a user question and returns ALLOWED or NOT_ALLOWED with a reason.
+    Used as a guardrail before generating SQL.
+    """
+    prompt = get_intent_validation_prompt()
+    chain = prompt | llm | StrOutputParser()
+    return chain
+
+
+def validate_query_intent(chain, question: str) -> tuple[bool, str | None]:
+    """
+    Run the intent validation chain. Returns (allowed, message).
+    - If allowed: (True, None).
+    - If not allowed: (False, reason_string) where reason_string is the natural-language explanation.
+    """
+    response = chain.invoke({"question": question}).strip()
+    if response.upper().startswith("ALLOWED"):
+        return True, None
+    if response.upper().startswith("NOT_ALLOWED"):
+        reason = response.split(":", 1)[-1].strip() if ":" in response else response
+        return False, reason or "This type of request is not allowed."
+    # Fallback: treat unclear response as not allowed for safety
+    return False, "Unable to validate this request. Please ask a read-only question about the database."
 
 
 def create_sql_chain(db, llm: BaseChatModel):

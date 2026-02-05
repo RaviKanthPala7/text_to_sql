@@ -9,15 +9,28 @@ This application provides a web interface for:
 """
 
 import json
+import logging
 import os
 import warnings
 from pathlib import Path
 from typing import Any
 
+# Reduce noisy torch/datasets logs from HuggingFace (e.g. "Examining the path of torch.classes")
+logging.getLogger("torch").setLevel(logging.ERROR)
+logging.getLogger("datasets").setLevel(logging.ERROR)
+
 import pandas as pd
 import streamlit as st
 
-from text_to_sql.chains import batch_generate_sql_queries, create_sql_chain, generate_sql_query
+warnings.filterwarnings("ignore")
+
+from text_to_sql.chains import (
+    batch_generate_sql_queries,
+    create_intent_validation_chain,
+    create_sql_chain,
+    generate_sql_query,
+    validate_query_intent,
+)
 from text_to_sql.config import get_llm_config
 from text_to_sql.db import get_database, get_schema, normalize_sql_table_names, run_query
 from text_to_sql.evaluation import (
@@ -26,8 +39,6 @@ from text_to_sql.evaluation import (
     run_ragas_evaluation,
 )
 from text_to_sql.llm_models import get_query_llm
-
-warnings.filterwarnings("ignore")
 
 # Cache file for evaluation results
 EVALUATION_CACHE_FILE = Path("evaluation_cache.json")
@@ -47,6 +58,8 @@ if "llm" not in st.session_state:
     st.session_state.llm = None
 if "sql_chain" not in st.session_state:
     st.session_state.sql_chain = None
+if "intent_chain" not in st.session_state:
+    st.session_state.intent_chain = None
 if "query_history" not in st.session_state:
     st.session_state.query_history = []
 if "schema_displayed" not in st.session_state:
@@ -73,6 +86,14 @@ def initialize_components():
             st.info("Please check your GOOGLE_API_KEY in the .env file.")
             raise
 
+    if st.session_state.intent_chain is None:
+        try:
+            st.session_state.intent_chain = create_intent_validation_chain(
+                st.session_state.llm
+            )
+        except Exception as e:
+            st.error(f"Failed to create intent validation chain: {str(e)}")
+            raise
     if st.session_state.sql_chain is None:
         try:
             st.session_state.sql_chain = create_sql_chain(
@@ -245,50 +266,63 @@ if submit_query and question.strip():
         try:
             # Initialize components if not already done
             initialize_components()
-            
-            with st.spinner("Generating SQL query..."):
-                sql = generate_sql_query(st.session_state.sql_chain, question)
-            # Normalize table names to lowercase so queries work on case-sensitive MySQL
-            sql = normalize_sql_table_names(sql)
 
-            st.success("SQL query generated successfully!")
-            
-            # Display generated SQL
-            st.subheader("📝 Generated SQL Query")
-            st.code(sql, language="sql")
-            
-            # Execute query and display results
-            try:
-                with st.spinner("Executing query..."):
-                    result = run_query(st.session_state.db, sql)
-                
-                st.subheader("📊 Query Results")
-                formatted_result = format_query_result(result)
-                
-                # Always display as a clean table (like SQL Workbench)
-                st.dataframe(
-                    formatted_result,
-                    use_container_width=True,
-                    hide_index=True,
+            # Guardrail: validate intent before generating SQL
+            with st.spinner("Checking query..."):
+                allowed, block_reason = validate_query_intent(
+                    st.session_state.intent_chain, question
                 )
-                
-                # Show row count
-                if len(formatted_result) > 0:
-                    st.caption(f"📈 {len(formatted_result)} row(s) returned")
-                else:
-                    st.info("Query executed successfully but returned no rows.")
-                
-                # Add to history
-                st.session_state.query_history.append({
-                    "question": question,
-                    "sql": sql,
-                    "result": str(result)[:200] + "..." if len(str(result)) > 200 else str(result),
-                })
-                
-            except Exception as e:
-                st.error(f"Failed to execute query: {str(e)}")
-                st.info("The SQL query was generated but could not be executed. Check the query syntax or database connection.")
-        
+            if not allowed:
+                st.error("This request is not allowed.")
+                st.info(block_reason)
+                st.caption(
+                    "Only read-only questions about the database are permitted. "
+                    "Deleting, updating, or modifying data is not allowed."
+                )
+            else:
+                with st.spinner("Generating SQL query..."):
+                    sql = generate_sql_query(st.session_state.sql_chain, question)
+                # Normalize table names to lowercase so queries work on case-sensitive MySQL
+                sql = normalize_sql_table_names(sql)
+
+                st.success("SQL query generated successfully!")
+
+                # Display generated SQL
+                st.subheader("📝 Generated SQL Query")
+                st.code(sql, language="sql")
+
+                # Execute query and display results
+                try:
+                    with st.spinner("Executing query..."):
+                        result = run_query(st.session_state.db, sql)
+
+                    st.subheader("📊 Query Results")
+                    formatted_result = format_query_result(result)
+
+                    # Always display as a clean table (like SQL Workbench)
+                    st.dataframe(
+                        formatted_result,
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+                    # Show row count
+                    if len(formatted_result) > 0:
+                        st.caption(f"📈 {len(formatted_result)} row(s) returned")
+                    else:
+                        st.info("Query executed successfully but returned no rows.")
+
+                    # Add to history
+                    st.session_state.query_history.append({
+                        "question": question,
+                        "sql": sql,
+                        "result": str(result)[:200] + "..." if len(str(result)) > 200 else str(result),
+                    })
+
+                except Exception as e:
+                    st.error(f"Failed to execute query: {str(e)}")
+                    st.info("The SQL query was generated but could not be executed. Check the query syntax or database connection.")
+
         except Exception as e:
             st.error(f"Failed to generate SQL query: {str(e)}")
             st.info("This might be due to API issues or invalid question format. Please try again.")

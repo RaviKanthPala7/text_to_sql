@@ -23,7 +23,31 @@ SQL Query:
 """
 
 
+INTENT_VALIDATION_TEMPLATE = """You are a guardrail for a Text-to-SQL application. Analyze the user's question and decide if it is allowed.
+
+Allowed: The user is asking a read-only question about data in the database (e.g. list, show, count, find, what is). Only SELECT-style queries are permitted.
+
+Not allowed:
+- The user wants to delete, drop, truncate, update, insert, or alter data or schema (e.g. "delete rows", "drop table", "remove data").
+- The question is harmful, violent, offensive, or inappropriate.
+- The question is not related to querying the database at all (e.g. general chat, off-topic).
+
+Respond with exactly one of these two formats:
+- If allowed: ALLOWED
+- If not allowed: NOT_ALLOWED: <one short sentence explaining why this is not allowed, in polite natural language for the user>
+
+User question:
+{question}
+
+Your response:"""
+
+
 def get_sql_prompt() -> ChatPromptTemplate:
     """Return the chat prompt template for SQL generation."""
     return ChatPromptTemplate.from_template(SQL_PROMPT_TEMPLATE.strip())
+
+
+def get_intent_validation_prompt() -> ChatPromptTemplate:
+    """Return the prompt template for query intent validation (guardrail)."""
+    return ChatPromptTemplate.from_template(INTENT_VALIDATION_TEMPLATE.strip())
 

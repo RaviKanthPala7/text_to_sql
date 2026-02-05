@@ -22,7 +22,7 @@
     "SELECT `Customer Names` FROM customers WHERE `Customer Index` = 1;"
   ],
   "evaluation_responses": [
-    "SELECT `2017_Budgets` FROM `2017_budgets` WHERE `Product_Name` = 'Product 12'",
+    "SELECT `2017_Budgets` FROM `2017_budgets` WHERE Product_Name = 'Product 12'",
     "SELECT Product_Name FROM products",
     "SELECT Customer_Names FROM customers",
     "SELECT name, state FROM regions",

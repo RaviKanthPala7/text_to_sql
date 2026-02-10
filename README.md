@@ -2,7 +2,7 @@
 
 A Streamlit app that converts natural language questions into SQL and runs them against a MySQL database. Built with LangChain, Google Gemini, and RAGAS-based evaluation.
 
-**Live app:** [https://text-to-sql-986401037066.asia-south1.run.app/](https://text-to-sql-986401037066.asia-south1.run.app/)
+**Live app: New link** [https://text-to-sql-343287988900.asia-south1.run.app/](https://text-to-sql-343287988900.asia-south1.run.app/)
 
 **Demo video:** [https://drive.google.com/file/d/12eEhAIS7-PaUDshuGGoK6zx0v_W8PomK/view](https://drive.google.com/file/d/12eEhAIS7-PaUDshuGGoK6zx0v_W8PomK/view)
 

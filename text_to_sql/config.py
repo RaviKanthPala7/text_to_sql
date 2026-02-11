@@ -65,7 +65,19 @@ def get_groq_api_key() -> str:
 
 
 def build_mysql_uri(config: DatabaseConfig) -> str:
-    """Construct the SQLAlchemy MySQL URI from the database configuration."""
+    """Construct the SQLAlchemy MySQL URI from the database configuration.
+    When DB_HOST starts with /cloudsql/, builds a URI that uses the Unix socket
+    (for Cloud SQL Auth Proxy on Cloud Run).
+    """
+    if config.host.startswith("/cloudsql/"):
+        # Cloud SQL Auth Proxy: connect via Unix socket
+        from urllib.parse import quote_plus
+        user = quote_plus(config.user)
+        password = quote_plus(config.password)
+        return (
+            f"mysql+pymysql://{user}:{password}@/{config.name}"
+            f"?unix_socket={config.host}"
+        )
     return (
         f"mysql+pymysql://{config.user}:{config.password}"
         f"@{config.host}:{config.port}/{config.name}"

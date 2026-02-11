@@ -71,6 +71,80 @@ A Streamlit app that converts natural language questions into SQL and runs them 
 
 4. **Database:** Use an existing MySQL instance or import `text_to_sql.sql` (e.g. `mysql -u user -p text_to_sql < text_to_sql.sql` or Cloud SQL Import from a GCS bucket).
 
+### Step-by-step: Local test against Cloud SQL (before deploy)
+
+Use the **Cloud SQL Auth Proxy** so the app talks to your real Cloud SQL instance from your machine. This verifies database, schema, and credentials before you deploy.
+
+---
+
+**Step 1 — Install Google Cloud SDK (if needed)**  
+- If you don’t have `gcloud` and `cloud-sql-proxy`:
+  - Install [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) for Windows.
+  - Open a new terminal and run: `gcloud init` (login and select your project).
+
+**Step 2 — Install Cloud SQL Auth Proxy**  
+- **Option A (recommended on Windows):** Download the proxy:
+  - Go to: https://cloud.google.com/sql/docs/mysql/connect-auth-proxy#install  
+  - Under “Download the proxy”, choose **Windows 64-bit**, download the `.exe`.  
+  - Rename it to `cloud-sql-proxy.exe` and put it in a folder that’s on your PATH (e.g. `C:\Program Files\Google\Cloud SQL Auth Proxy\`) or in your project folder.  
+- **Option B:** If you use gcloud components:
+  ```powershell
+  gcloud components install cloud-sql-proxy
+  ```
+- Check it works:
+  ```powershell
+  cloud-sql-proxy --version
+  ```
+
+**Step 3 — Log in to GCP (application default credentials)**  
+- In PowerShell or Command Prompt:
+  ```powershell
+  gcloud auth application-default login
+  ```
+- A browser window opens; sign in with the Google account that has access to your Cloud SQL project.  
+- When it says “Credentials saved”, you’re done.
+
+**Step 4 — Start the proxy (leave this terminal open)**  
+- Replace `YOUR_PROJECT_ID` with your actual GCP project ID (e.g. `text-to-sql-486913`). Use the same instance name and region as in deploy (e.g. `text-to-sql-db`, `asia-south1`).  
+- Use port `3307` so it doesn’t clash with a local MySQL on 3306:
+  ```powershell
+  cloud-sql-proxy "YOUR_PROJECT_ID:asia-south1:text-to-sql-db" --port=3307
+  ```
+- You should see something like: `Listening on 127.0.0.1:3307 for YOUR_PROJECT_ID:asia-south1:text-to-sql-db`.  
+- Leave this terminal running for the whole test.
+
+**Step 5 — Configure the app to use the proxy**  
+- In your project folder, create or edit `.env` (same directory as `app.py`). Set:
+  ```env
+  DB_HOST=127.0.0.1
+  DB_PORT=3307
+  DB_USER=your_cloud_sql_username
+  DB_PASSWORD=your_cloud_sql_password
+  DB_NAME=text_to_sql
+  GOOGLE_API_KEY=your_gemini_api_key
+  GROQ_API_KEY=your_groq_api_key
+  ```
+- Use the same `DB_USER`, `DB_PASSWORD`, and `DB_NAME` as in your Cloud SQL instance (and GitHub secrets).  
+- Ensure the database `text_to_sql` (or whatever you set as `DB_NAME`) exists on Cloud SQL and has the schema (e.g. import `text_to_sql.sql` if needed).
+
+**Step 6 — Install Python deps and run the app**  
+- In a **new** terminal (the first one is still running the proxy), go to the project folder:
+  ```powershell
+  cd "c:\Pala Ravikanth\GenAI Projects\Text to SQL"
+  pip install -r requirements.txt
+  streamlit run app.py
+  ```
+- When Streamlit opens in the browser, try a natural-language question.  
+- If it runs and returns results, your local test against Cloud SQL is successful.
+
+**Step 7 — Stop when done**  
+- In the Streamlit terminal: `Ctrl+C`.  
+- In the proxy terminal: `Ctrl+C`.
+
+---
+
+This flow uses the normal TCP connection (host:port), not the `/cloudsql/` socket used on Cloud Run, but it confirms the database and app work before you deploy.
+
 ---
 
 ## Deployment

@@ -52,9 +52,12 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Use Cloud SQL Auth Proxy socket (Cloud Run has Cloud SQL connection attached)
+          CLOUD_SQL_SOCKET="/cloudsql/${{ secrets.GCP_PROJECT_ID }}:asia-south1:text-to-sql-db"
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "DB_HOST=${{ secrets.DB_HOST }},DB_PORT=3306,DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }},GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"
+            --add-cloudsql-instances "${{ secrets.GCP_PROJECT_ID }}:asia-south1:text-to-sql-db" \
+            --set-env-vars "DB_HOST=$CLOUD_SQL_SOCKET,DB_PORT=3306,DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }},GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"

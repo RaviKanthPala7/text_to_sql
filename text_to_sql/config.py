@@ -43,7 +43,7 @@ def get_database_config() -> DatabaseConfig:
 def get_llm_config() -> LLMConfig:
     """Return LLM configuration loaded from environment variables."""
     return LLMConfig(
-        google_model=os.getenv("GOOGLE_MODEL_NAME", "gemini-2.0-flash"),
+        google_model=os.getenv("GOOGLE_MODEL_NAME", "gemini-2.5-flash"),
         groq_model=os.getenv("GROQ_MODEL_NAME", "llama-3.3-70b-versatile"),
     )
 

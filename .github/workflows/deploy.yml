@@ -10,6 +10,7 @@ on:
       - '.gitignore'
       - '.env.example'
       - 'evaluation_cache.json'
+  workflow_dispatch:  # Run manually from Actions tab (e.g. after updating secrets)
 
 env:
   REGION: asia-south1

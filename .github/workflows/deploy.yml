@@ -55,14 +55,30 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Deploy to Cloud Run
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          # Use Cloud SQL Auth Proxy socket (Cloud Run has Cloud SQL connection attached)
-          CLOUD_SQL_SOCKET="/cloudsql/${{ secrets.GCP_PROJECT_ID }}:asia-south1:text-to-sql-db"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${GCP_PROJECT_ID}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          CLOUD_SQL_SOCKET="/cloudsql/${GCP_PROJECT_ID}:asia-south1:text-to-sql-db"
+          # YAML file avoids broken parsing when passwords/keys contain commas or special chars
+          cat > /tmp/env.yaml <<EOF
+          DB_HOST: "${CLOUD_SQL_SOCKET}"
+          DB_PORT: "3306"
+          DB_USER: "${DB_USER}"
+          DB_PASSWORD: "${DB_PASSWORD}"
+          DB_NAME: "${DB_NAME}"
+          GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+          GROQ_API_KEY: "${GROQ_API_KEY}"
+          EOF
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --add-cloudsql-instances "${{ secrets.GCP_PROJECT_ID }}:asia-south1:text-to-sql-db" \
-            --set-env-vars "DB_HOST=$CLOUD_SQL_SOCKET,DB_PORT=3306,DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }},GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"
+            --add-cloudsql-instances "${GCP_PROJECT_ID}:asia-south1:text-to-sql-db" \
+            --env-vars-file=/tmp/env.yaml

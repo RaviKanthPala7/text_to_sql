@@ -31,8 +31,15 @@ class LLMConfig:
 
 def get_database_config() -> DatabaseConfig:
     """Return database configuration loaded from environment variables."""
+    host = os.getenv("DB_HOST", "localhost")
+    # Cloud Run sets CLOUD_SQL_CONNECTION_NAME when a Cloud SQL instance is attached.
+    # Use the Unix socket path if DB_HOST was not set correctly by deploy (common issue).
+    cloud_sql = os.getenv("CLOUD_SQL_CONNECTION_NAME")
+    if cloud_sql and host in ("localhost", "127.0.0.1"):
+        host = f"/cloudsql/{cloud_sql}"
+
     return DatabaseConfig(
-        host=os.getenv("DB_HOST", "localhost"),
+        host=host,
         port=int(os.getenv("DB_PORT", "3306")),
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", "root"),

@@ -2,7 +2,7 @@
 
 A Streamlit app that converts natural language questions into SQL and runs them against a MySQL database. Built with LangChain, Google Gemini, and RAGAS-based evaluation.
 
-**Live app: New link** [https://text-to-sql-343287988900.asia-south1.run.app/](https://text-to-sql-343287988900.asia-south1.run.app/)
+**Live app:** [https://text-to-sql-455839805651.asia-south1.run.app/](https://text-to-sql-455839805651.asia-south1.run.app/)
 
 **Demo video:** [https://drive.google.com/file/d/12eEhAIS7-PaUDshuGGoK6zx0v_W8PomK/view](https://drive.google.com/file/d/12eEhAIS7-PaUDshuGGoK6zx0v_W8PomK/view)
 
@@ -150,9 +150,10 @@ This flow uses the normal TCP connection (host:port), not the `/cloudsql/` socke
 ## Deployment
 
 - **Container:** Built with the repo `Dockerfile` (Python 3.12 slim).
-- **CI/CD:** GitHub Actions (`.github/workflows/deploy.yml`) builds the image, pushes to Google Artifact Registry, and deploys to **Cloud Run** on push to `main`.
-- **Database:** Cloud SQL for MySQL; data can be migrated via `mysqldump` → upload to Cloud Storage → Cloud SQL Import.
-- **Secrets:** GitHub secrets for `GCP_SA_KEY`, `GCP_PROJECT_ID`, DB and API keys; GCP service account needs Artifact Registry Writer, Cloud Run Admin, Service Account User.
+- **CI/CD:** GitHub Actions (`.github/workflows/deploy.yml`) builds the image, pushes to Google Artifact Registry, and deploys to **Cloud Run** on push to `main` (also supports manual trigger with `workflow_dispatch`).
+- **Database:** Cloud SQL for MySQL in **Mumbai (`asia-south1`)**, connected from Cloud Run using Cloud SQL socket (`/cloudsql/PROJECT:REGION:INSTANCE`).
+- **Auth for deploy:** GitHub Actions uses **Workload Identity Federation** (no service-account JSON key needed).
+- **Required GitHub secrets:** `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `GOOGLE_API_KEY`, `GROQ_API_KEY`.
 
 ---
 
